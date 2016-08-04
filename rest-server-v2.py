@@ -1,4 +1,4 @@
-#!flask/bin/python
+#!/usr/bin/env python3
 
 """Alternative version of the ToDo RESTful server implemented using the
 Flask-RESTful extension."""
@@ -25,20 +25,20 @@ def unauthorized():
     # auth dialog
     return make_response(jsonify({'message': 'Unauthorized access'}), 403)
 
-tasks = [
-    {
+tasks = {
+    1: {
         'id': 1,
         'title': u'Buy groceries',
         'description': u'Milk, Cheese, Pizza, Fruit, Tylenol',
         'done': False
     },
-    {
+    2: {
         'id': 2,
         'title': u'Learn Python',
         'description': u'Need to find a good Python tutorial on the web',
         'done': False
     }
-]
+}
 
 task_fields = {
     'title': fields.String,
@@ -61,17 +61,19 @@ class TaskListAPI(Resource):
         super(TaskListAPI, self).__init__()
 
     def get(self):
-        return {'tasks': [marshal(task, task_fields) for task in tasks]}
+        return {'tasks': [marshal(task, task_fields) for task in
+                          tasks.values()]}
 
     def post(self):
         args = self.reqparse.parse_args()
+        task_id = max(tasks.keys()) + 1
         task = {
-            'id': tasks[-1]['id'] + 1,
+            'id': task_id,
             'title': args['title'],
             'description': args['description'],
             'done': False
         }
-        tasks.append(task)
+        tasks[task_id] = task
         return {'task': marshal(task, task_fields)}, 201
 
 
@@ -86,16 +88,15 @@ class TaskAPI(Resource):
         super(TaskAPI, self).__init__()
 
     def get(self, id):
-        task = [task for task in tasks if task['id'] == id]
-        if len(task) == 0:
+        task = tasks.get(id, None)
+        if task is None:
             abort(404)
-        return {'task': marshal(task[0], task_fields)}
+        return {'task': marshal(task, task_fields)}
 
     def put(self, id):
-        task = [task for task in tasks if task['id'] == id]
-        if len(task) == 0:
+        task = tasks.get(id, None)
+        if task is None:
             abort(404)
-        task = task[0]
         args = self.reqparse.parse_args()
         for k, v in args.items():
             if v is not None:
@@ -103,10 +104,10 @@ class TaskAPI(Resource):
         return {'task': marshal(task, task_fields)}
 
     def delete(self, id):
-        task = [task for task in tasks if task['id'] == id]
-        if len(task) == 0:
+        task = tasks.get(id, None)
+        if task is None:
             abort(404)
-        tasks.remove(task[0])
+        del tasks[task['id']]
         return {'result': True}
 
 
