@@ -1,2 +1,3 @@
-python virtualenv.py flask
-flask/bin/pip install -r requirements.txt
+python3 virtualenv.py env
+source env/bin/activate
+pip3 install -r requirements.txt
